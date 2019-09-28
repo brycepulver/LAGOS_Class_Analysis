@@ -3,6 +3,8 @@ title: "LAGOS Spatial Analysis"
 author: "Matthew Ross"
 date: "9/11/2019"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -24,14 +26,16 @@ library(USAboundaries) #USA states and counties
 
 ### First download and then specifically grab the locus (or site lat longs)
 ```{r data-read}
-#Lagos download script
-lagosne_get(version='1.087.1',dest_folder = LAGOSNE:::lagos_path())
+# #Lagos download script
+# lagosne_get(version='1.087.1',dest_folder = LAGOSNE:::lagos_path())
+# 
+# #Load in lagos
+# lagos <- lagosne_load(version='1.087.01')
+# 
+# #Grab the lake centroid info
+# lake_centers <- lagos$locus
 
-#Load in lagos
-lagos <- lagosne_load()
-
-#Grab the lake centroid info
-lake_centers <- lagos$locus
+load('lake_centers.Rdata')
 ```
 
 
@@ -91,6 +95,18 @@ minnesota_lakes %>%
 
 ```{r }
 #Your code here
+iowa_illinois  <- states %>%
+  filter(name %in% c('Iowa','Illinois')) %>%
+  st_transform(2163)
+
+#Subset lakes based on spatial position
+iowa_ill_lakes <- spatial_lakes[iowa_illinois,]
+
+#Plotting the first 1000 lakes
+iowa_ill_lakes %>%
+  slice(1:1000) %>%
+  arrange(lake_area_ha) %>%
+  mapview(.,zcol = 'lake_area_ha')
 ```
 
 
@@ -99,6 +115,11 @@ minnesota_lakes %>%
 combined? How does this compare to Minnesota?
 
 ```{r}
+
+head(iowa_ill_lakes)
+
+nrow(iowa_ill_lakes)
+nrow(minnesota_lakes)
 
 ```
 
@@ -110,6 +131,20 @@ y axis (check out geom_histogram)
 
 ```{r}
 
+iowa_minn  <- states %>%
+  filter(name %in% c('Iowa','Minnesota')) %>%
+  st_transform(2163)
+
+#Subset lakes based on spatial position
+iowa_minn_lakes <- spatial_lakes %>%
+  st_join(.,iowa_minn) %>%
+  filter(!is.na(name))
+
+ggplot(iowa_minn_lakes,aes(x=lake_area_ha)) +
+  geom_histogram()+
+  facet_wrap(~name,ncol=1)+
+  scale_x_log10()
+
 
 ```
 
@@ -118,6 +153,9 @@ y axis (check out geom_histogram)
 by lake area in hectares
 
 ```{r}
+#This is a map view of all the lakes in Iowa and Illinois
+mapview(iowa_ill_lakes,zcol = 'lake_area_ha')
+#There is a mapview of iowa_ill_lakes on line 106-109 for the first 1000 lakes
 
 ```
 
@@ -125,4 +163,5 @@ by lake area in hectares
 ## 5) What other data sources might we use to understand how reservoirs and 
 natural lakes vary in size in these three states? 
 
+Satellite imagery could be used to delineate lake sizes. DEM data combined with watershed delineation could provide a higher level of classification as well.
 
